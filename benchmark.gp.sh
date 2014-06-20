@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+
+cat <<EOF
 set terminal png size 640,480 font "Gill Sans" 9 rounded #transparent
 
 # Line style for axes
@@ -28,10 +31,9 @@ set style line 2 lt rgb "#00A000" lw 2 pt 9
 set style line 3 lt rgb "#5060D0" lw 2 pt 5
 set style line 4 lt rgb "#F25900" lw 2 pt 13
 
-set output "results.png"
+set output "${OUTPUT}.png"
 set xlabel "Go versions"
-set ylabel "Time (ns)"
+set ylabel "$YLABEL"
 
-set key bottom right
-
-plot "/tmp/gobenchmark-results.dat" i 0 using (column(0)):2:xtic(1) title columnhead(1) with linespoints ls 4
+plot "$DATAFILE" i 0 using (column(0)):2:xtic(1) title columnhead(1) with linespoints ls 4
+EOF

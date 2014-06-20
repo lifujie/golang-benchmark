@@ -8,7 +8,7 @@ fi
 
 passes=3
 prefix=results_$RANDOM
-benchtime=1
+benchtime=2
 
 goversions=""
 benchmarks=""
@@ -35,23 +35,37 @@ benchmarks=(`echo -ne $benchmarks | sort | uniq | tr "\n" ' '`)
 
 echo `date` "Processing results..."
 mkdir -p results
+tmpfile=`tempfile`
 for benchmark in ${benchmarks[@]}
 do
     benchmark=${benchmark#Benchmark}
-    echo '"'$benchmark'"' > /tmp/gobenchmark-results.dat
+    echo '"'$benchmark'"' > results/${benchmark}.dat
     for goversion in ${goversions[@]}
     do
         time=`set | grep "^${prefix}_"${goversion//./_}_Benchmark${benchmark}= | cut -f2 -d=`
         let time=$time/$passes
-        echo $goversion $time >> /tmp/gobenchmark-results.dat
+        echo $goversion $time >> results/${benchmark}.dat
     done
 
-    gnuplot benchmark.gp
-    mv /tmp/gobenchmark-results.dat results/${benchmark}.dat
-    mv results.png results/${benchmark}.png
+    OUTPUT=results/${benchmark} YLABEL='Time (ns)' DATAFILE=results/${benchmark}.dat . benchmark.gp.sh > $tmpfile
+    gnuplot $tmpfile
 done
 
-echo '"Total"' > /tmp/gobenchmark-results.dat
+echo '"Sum"' > results/sum.dat
+for goversion in ${goversions[@]}
+do
+    totaltime=0
+    for benchmark in ${benchmarks[@]}
+    do
+        time=`set | grep "^${prefix}_"${goversion//./_}_${benchmark}= | cut -f2 -d=`
+        let totaltime=$totaltime+$time
+    done
+    echo $goversion $totaltime >> results/sum.dat
+done
+OUTPUT=results/sum YLABEL='Time (ns)' DATAFILE=results/sum.dat . benchmark.gp.sh > $tmpfile
+gnuplot $tmpfile
+
+echo '"Score"' > results/total.dat
 for goversion in ${goversions[@]}
 do
     totaltime=0
@@ -69,12 +83,11 @@ do
         time=`set | grep "^${prefix}_"${goversion//./_}_${benchmark}= | cut -f2 -d=`
         let totaltime="$totaltime+((${time}*1000)/${maxtime})"
     done
-    echo $goversion $totaltime >> /tmp/gobenchmark-results.dat
+    echo $goversion $totaltime >> results/total.dat
 done
+OUTPUT=results/total YLABEL='Score' DATAFILE=results/total.dat . benchmark.gp.sh > $tmpfile
+gnuplot $tmpfile
 
-echo `date` "Plotting results..."
-gnuplot benchmark.gp
-mv /tmp/gobenchmark-results.dat results/total.dat
-mv results.png results/total.png
+rm $tmpfile
 
 echo `date` "All done."
