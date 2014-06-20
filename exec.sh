@@ -6,9 +6,9 @@ then
     exit 1
 fi
 
-passes=1
+passes=3
 prefix=results_$RANDOM
-benchtime=0.1
+benchtime=1
 
 goversions=""
 benchmarks=""
@@ -30,7 +30,7 @@ do
         done
     done
 done
-goversions=(`echo -ne $goversions | sort | tr "\n" ' '`)
+goversions=(`echo -ne $goversions | sort | uniq | tr "\n" ' '`)
 benchmarks=(`echo -ne $benchmarks | sort | uniq | tr "\n" ' '`)
 
 echo `date` "Processing results..."
